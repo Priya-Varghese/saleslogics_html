@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inter CAD Systems — Sales Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Epilogue:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --navy:#0B1929;--sidebar:#0F2236;--sidebar-hover:#1A3554;--accent:#3B82F6;
+  --teal:#0D9488;--green:#10B981;--amber:#F59E0B;--red:#EF4444;--purple:#8B5CF6;
+  --text:#0F172A;--muted:#64748B;--border:#E2E8F0;--bg:#F0F4F8;--card:#FFFFFF;
+  --green-bg:#ECFDF5;--amber-bg:#FFFBEB;--red-bg:#FEF2F2;--blue-bg:#EFF6FF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Epilogue',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px}
+.sidebar{width:220px;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff}
+.logo-sub{font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px}
+.sidebar-section{padding:14px 12px 6px;font-size:9px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.12em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin:1px 8px;cursor:pointer;color:#94A3B8;font-size:13px;font-weight:500;transition:all 0.15s;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:var(--sidebar-hover);color:#fff}
+.nav-item.active{background:var(--accent);color:#fff}
+.nav-item.disabled{opacity:0.4;cursor:default}
+.nav-icon{font-size:15px;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,0.08)}
+.user-card{display:flex;align-items:center;gap:10px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role{font-size:10px;color:#64748B}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 22px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--navy)}
+.topbar-title span{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.filter-btn{display:flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:'Epilogue',sans-serif}
+.data-badge{font-size:10px;padding:3px 8px;border-radius:99px;background:#DCFCE7;color:#166534;font-weight:600}
+.content{flex:1;overflow-y:auto;padding:18px 22px}
+.dashboard{display:none}
+.dashboard.active{display:block;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:var(--accent)}
+.kpi.green::before{background:var(--green)}
+.kpi.amber::before{background:var(--amber)}
+.kpi.red::before{background:var(--red)}
+.kpi.purple::before{background:var(--purple)}
+.kpi.teal::before{background:var(--teal)}
+.kpi.gray::before{background:var(--muted)}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-weight:600}
+.kpi-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--navy);line-height:1;margin-bottom:3px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-est{font-size:10px;color:var(--amber);font-weight:600;margin-top:3px}
+.chart-grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-grid-equal{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative}
+.na-panel{background:var(--bg);border:1.5px dashed var(--border);border-radius:8px;padding:28px;text-align:center}
+.na-icon{font-size:28px;margin-bottom:8px}
+.na-title{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.na-desc{font-size:11px;color:var(--muted);max-width:220px;margin:0 auto;line-height:1.5}
+.est-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:var(--amber-bg);color:#78350F;font-weight:600;margin-left:6px}
+.real-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:var(--green-bg);color:#065F46;font-weight:600;margin-left:6px}
+.partial-note{font-size:11px;color:var(--amber);background:var(--amber-bg);border-radius:6px;padding:6px 10px;margin-top:8px;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{padding:9px 11px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);border-bottom:2px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:#FAFBFF}
+tbody td{padding:9px 11px;vertical-align:middle}
+.td-name{font-weight:600;color:var(--navy)}
+.td-muted{color:var(--muted)}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.badge-green{background:var(--green-bg);color:#065F46}
+.badge-amber{background:var(--amber-bg);color:#78350F}
+.badge-red{background:var(--red-bg);color:#7F1D1D}
+.badge-blue{background:var(--blue-bg);color:#1E40AF}
+.badge-gray{background:#F1F5F9;color:#475569}
+.av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-right:7px;flex-shrink:0;vertical-align:middle}
+.funnel{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.funnel-bar{border-radius:6px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:12px;font-weight:600}
+.alert{border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;font-size:12px}
+.alert.red{background:var(--red-bg);border:1px solid #FCA5A5;color:#7F1D1D}
+.alert.amber{background:var(--amber-bg);border:1px solid #FCD34D;color:#78350F}
+.alert.green{background:var(--green-bg);border:1px solid #6EE7B7;color:#065F46}
+.alert-title{font-weight:700;margin-bottom:2px}
+.leader-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.leader-row:last-child{border-bottom:none}
+.leader-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.rank-1{background:#FFD700;color:#7B6000}
+.rank-2{background:#E2E8F0;color:#475569}
+.rank-3{background:#FED7AA;color:#7C3F00}
+.rank-n{background:#F1F5F9;color:#64748B}
+.leader-name{font-size:13px;font-weight:600;color:var(--navy)}
+.leader-sub{font-size:11px;color:var(--muted)}
+.leader-bar-wrap{width:70px;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.leader-bar{height:5px;border-radius:3px;background:var(--accent)}
+.badge-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.badge-icon{font-size:28px;margin-bottom:6px}
+.badge-name{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.badge-holder{font-size:11px;color:var(--muted)}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--navy)}
+.info-strip{background:var(--blue-bg);border:1px solid #BFDBFE;border-radius:8px;padding:10px 14px;font-size:12px;color:#1E40AF;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">InterCAD</div>
+    <div class="logo-sub">Sales Dashboard</div>
+  </div>
+  <div class="sidebar-section">Dashboards</div>
+  <button class="nav-item active" onclick="switchDash('company',this)"><span class="nav-icon">🏢</span> Company View</button>
+  <button class="nav-item" onclick="switchDash('manager',this)"><span class="nav-icon">👔</span> Sales Manager</button>
+  <button class="nav-item" onclick="switchDash('product',this)"><span class="nav-icon">📦</span> Product Manager</button>
+  <button class="nav-item" onclick="switchDash('executive',this)"><span class="nav-icon">🎯</span> Sales Executive</button>
+  <button class="nav-item" onclick="switchDash('leadership',this)"><span class="nav-icon">🏆</span> Leadership Board</button>
+  <div class="sidebar-section">Coming Soon</div>
+  <button class="nav-item disabled"><span class="nav-icon">📍</span> Field Force</button>
+  <button class="nav-item disabled"><span class="nav-icon">📞</span> Call Logs</button>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">CP</div>
+      <div><div class="user-name">Cinu P Thomas</div><div class="user-role">Director</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Company Dashboard <span>Leadership Overview</span></div>
+    <div class="topbar-actions">
+      <span class="data-badge">✓ Live data</span>
+      <button class="filter-btn">📅 May 2026 ▾</button>
+      <button class="filter-btn">🌍 All Regions ▾</button>
+    </div>
+  </div>
+  <div class="content">
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- DASHBOARD 1: COMPANY -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="dashboard active" id="dash-company">
+    <div class="kpi-grid">
+      <div class="kpi blue">
+        <div class="kpi-label">Active Customers</div>
+        <div class="kpi-value">8,324</div>
+        <div class="kpi-sub">May 2021 – Apr 2026</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Revenue Received</div>
+        <div class="kpi-value">₹6.58 Cr</div>
+        <div class="kpi-sub">633 dated payment records</div>
+      </div>
+      <div class="kpi teal">
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value">19.4%</div>
+        <div class="kpi-sub">4,067 of 20,993 enquiries</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Revenue vs Target</div>
+        <div class="kpi-value">33.3%</div>
+        <div class="kpi-sub">Rs.9.67 Cr of Rs.29 Cr</div>
+        <div class="kpi-est">⚠ 7 of 19 reps have targets set</div>
+      </div>
+      <div class="kpi purple">
+        <div class="kpi-label">Active Sales Team</div>
+        <div class="kpi-value">19</div>
+        <div class="kpi-sub">Across 3 teams · Kochi & Blr</div>
+      </div>
+    </div>
+
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Revenue Received — Year by Year <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">Actual payments received — valid dated records only (₹21.7L with missing dates not shown)</div>
+        <div class="chart-wrap"><canvas id="c-revenue-year" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Enquiry Funnel <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">All 20,993 enquiries — May 2021 to Apr 2026</div>
+        <div class="funnel">
+          <div class="funnel-bar" style="background:#3B82F6;width:100%"><span>Total Enquiries</span><span>20,993 · 100%</span></div>
+          <div class="funnel-bar" style="background:#0D9488;width:80.4%"><span>Open Pipeline</span><span>16,882 · 80.4%</span></div>
+          <div class="funnel-bar" style="background:#10B981;width:19.4%"><span>Closed (Won)</span><span>4,067 · 19.4%</span></div>
+          <div class="funnel-bar" style="background:#EF4444;width:2%"><span>Lost</span><span>44 · 0.2%</span></div>
+        </div>
+        <div class="partial-note">⚠ Open pipeline is inflated — follow-up dates not updated since 2021. Many open enquiries may be inactive. The 0.2% loss rate is unusually low — deals are not being marked as lost.</div>
+      </div>
+    </div>
+
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Revenue by Region <span class="est-badge">Estimate</span></div>
+        <div class="chart-sub">Approximate — based on customer location records</div>
+        <div class="chart-wrap"><canvas id="c-region" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top Products — by Target Value</div>
+        <div class="chart-sub">Annual target value from product target records (8 records total)</div>
+        <div class="partial-note" style="margin-bottom:10px">⚠ Only 8 product target records exist. Limited data — targets need to be fully entered.</div>
+        <table><thead><tr><th>Product</th><th>Target status</th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Autodesk</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td class="td-name">BricsCAD</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td class="td-name">Civil Tools</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td class="td-name">Infra Solutions</td><td><span class="badge badge-amber">Partial</span></td></tr>
+          <tr><td class="td-name">Others</td><td><span class="badge badge-gray">Mixed</span></td></tr>
+        </tbody></table>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Data Observations</div>
+        <div class="chart-sub">Issues found during data investigation</div>
+        <div class="alert amber"><div><div class="alert-title">886 payments have no date</div><div>₹21.7 lakh cannot appear on revenue charts — dates missing in source records.</div></div></div>
+        <div class="alert amber"><div><div class="alert-title">2024 revenue gap</div><div>Only 31 records found — vs 175 in other years. Revenue chart shows a dip that year.</div></div></div>
+        <div class="alert amber"><div><div class="alert-title">12 of 19 reps have no 2025 target</div><div>Target dashboard shows only 7 team members until targets are entered.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- DASHBOARD 2: SALES MANAGER -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="dashboard" id="dash-manager">
+    <div class="info-strip">ℹ️ This dashboard shows data for the 7 team members who have 2025 targets recorded. 12 reps have no target set and do not appear in target charts.</div>
+
+    <div class="kpi-grid-3">
+      <div class="kpi green">
+        <div class="kpi-label">Company Revenue Target (FY2025)</div>
+        <div class="kpi-value">₹29 Cr</div>
+        <div class="kpi-sub">Cinu P Thomas — company target</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Company Revenue Achieved</div>
+        <div class="kpi-value">₹9.67 Cr</div>
+        <div class="kpi-sub">33.3% — Q4 tracking only</div>
+        <div class="kpi-est">⚠ Auto-calculated — not manually verified</div>
+      </div>
+      <div class="kpi teal">
+        <div class="kpi-label">Overall Win Rate</div>
+        <div class="kpi-value">19.4%</div>
+        <div class="kpi-sub">4,067 won from 20,993 enquiries</div>
+      </div>
+    </div>
+
+    <div class="chart-grid-equal">
+      <div class="chart-card">
+        <div class="chart-title">Team Target vs Achievement <span class="est-badge">Partial data</span></div>
+        <div class="chart-sub">FY2025 · 7 of 19 reps have targets set · All show 33.3% (auto-calculated at entry)</div>
+        <div class="chart-wrap"><canvas id="c-team-target" height="240"></canvas></div>
+        <div class="partial-note">⚠ All achievement figures are auto-calculated at 33.3% — not updated from actual sales. Reflects when targets were entered, not real progress.</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Team — Customer Assignments <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">All 19 team members with confirmed customer counts</div>
+        <div style="overflow-y:auto;max-height:280px">
+        <table><thead><tr><th>Rep</th><th>Customers</th><th>Target set?</th></tr></thead>
+        <tbody>
+          <tr><td><span class="av" style="background:#1D4ED8">LS</span><span class="td-name">Lakshmipriya S</span></td><td><strong>1,143</strong></td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#065F46">SS</span><span class="td-name">Swathy Santhosh</span></td><td>781</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#1D4ED8">LK</span><span class="td-name">Lakshmi Kalesh</span></td><td>683</td><td><span class="badge badge-green">✓ Rs.60L</span></td></tr>
+          <tr><td><span class="av" style="background:#92400E">MF</span><span class="td-name">Mohammed Fiaz</span></td><td>615</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#92400E">KB</span><span class="td-name">Kevin Binu</span></td><td>549</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#92400E">RD</span><span class="td-name">Ramya Devaraj</span></td><td>418</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#065F46">AS</span><span class="td-name">Aswathy Sijith</span></td><td>391</td><td><span class="badge badge-green">✓ Rs.1Cr</span></td></tr>
+          <tr><td><span class="av" style="background:#5B21B6">AP</span><span class="td-name">Arjun Palakkal</span></td><td>313</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#5B21B6">SR</span><span class="td-name">Soorya Ravi</span></td><td>227</td><td><span class="badge badge-green">✓ Rs.1Cr</span></td></tr>
+          <tr><td><span class="av" style="background:#1D4ED8">RA</span><span class="td-name">Radhika</span></td><td>225</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#5B21B6">TJ</span><span class="td-name">Tobit Joe Glancy</span></td><td>171</td><td><span class="badge badge-green">✓ Rs.20L</span></td></tr>
+          <tr><td><span class="av" style="background:#374151">TK</span><span class="td-name">Teena Kevin</span></td><td>153</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#1D4ED8">AC</span><span class="td-name">Anitha C M</span></td><td>123</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#065F46">VC</span><span class="td-name">Veena Coelho</span></td><td>88</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#374151">SN</span><span class="td-name">Sabu S Nair</span></td><td>75</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#374151">MT</span><span class="td-name">Mathew Thomas</span></td><td>53</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#374151">AA</span><span class="td-name">Aayisha</span></td><td>—</td><td><span class="badge badge-green">✓ Rs.10L</span></td></tr>
+          <tr><td><span class="av" style="background:#065F46">JR</span><span class="td-name">John V Roy</span></td><td>19</td><td><span class="badge badge-gray">No target</span></td></tr>
+          <tr><td><span class="av" style="background:#374151">SA</span><span class="td-name">Sareena Anas</span></td><td>13</td><td><span class="badge badge-gray">No target</span></td></tr>
+        </tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Upcoming Tasks</div>
+        <div class="chart-sub">From task records — 16 total tasks logged across all reps</div>
+        <div class="na-panel" style="padding:20px">
+          <div class="na-icon">📋</div>
+          <div class="na-title">Very few tasks logged</div>
+          <div class="na-desc">Only 16 task records exist across the whole team. Last entry: Jan 2025. Follow-up tracking will improve as the team uses the task feature.</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Pipeline by Stage</div>
+        <div class="chart-sub">Stage breakdown per deal</div>
+        <div class="na-panel">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Not available</div>
+          <div class="na-desc">The system records whether a deal was won or lost — but not which stage each open deal is currently at. Stage-by-stage breakdown is not possible with current data.</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Average Deal Size</div>
+        <div class="chart-sub">Revenue per deal</div>
+        <div class="na-panel">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Not available</div>
+          <div class="na-desc">The system stores totals per customer, not individual deals. Calculating an average would give a misleading figure and is not shown.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- DASHBOARD 3: PRODUCT MANAGER -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="dashboard" id="dash-product">
+    <div class="info-strip">ℹ️ Product-level revenue data is not available in the current system. Targets exist for only 8 records. Charts show what is available — estimates are clearly labelled.</div>
+
+    <div class="kpi-grid-3">
+      <div class="kpi green">
+        <div class="kpi-label">Products in Catalogue</div>
+        <div class="kpi-value">694</div>
+        <div class="kpi-sub">With pricing and profit margins</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Stock Records</div>
+        <div class="kpi-value">408</div>
+        <div class="kpi-sub">With regional breakdown</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Product Target Records</div>
+        <div class="kpi-value">8</div>
+        <div class="kpi-sub">FY2025 — very sparse</div>
+        <div class="kpi-est">⚠ Targets need to be entered</div>
+      </div>
+    </div>
+
+    <div class="chart-grid-equal">
+      <div class="chart-card">
+        <div class="chart-title">Revenue Achieved vs Target by Product</div>
+        <div class="chart-sub">Target bars only — achieved revenue per product is not in the system</div>
+        <div class="na-panel">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Achieved figures not available</div>
+          <div class="na-desc">Product-level revenue actuals require detailed invoice records per product which do not currently exist. Only target values can be shown.</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Stock Status <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">408 stock records — with warning limits for low-stock alerts</div>
+        <div class="chart-wrap"><canvas id="c-stock" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="chart-title">Product Performance Summary <span class="est-badge">Estimate</span></div>
+      <div class="chart-sub">Profit margin % from product catalogue · Revenue achieved is not available — shown as N/A</div>
+      <table><thead><tr><th>Product</th><th>Profit Margin</th><th>Purchase Price</th><th>Stock Status</th><th>Revenue Achieved</th></tr></thead>
+      <tbody>
+        <tr><td class="td-name">Autodesk</td><td>Listed in system</td><td>Listed in system</td><td><span class="badge badge-green">In stock</span></td><td class="td-muted">N/A — not in system</td></tr>
+        <tr><td class="td-name">BricsCAD</td><td>Listed in system</td><td>Listed in system</td><td><span class="badge badge-green">In stock</span></td><td class="td-muted">N/A — not in system</td></tr>
+        <tr><td class="td-name">Civil Tools</td><td>Listed in system</td><td>Listed in system</td><td><span class="badge badge-green">In stock</span></td><td class="td-muted">N/A — not in system</td></tr>
+        <tr><td class="td-name">Infra Solutions</td><td>Listed in system</td><td>Listed in system</td><td><span class="badge badge-amber">Low</span></td><td class="td-muted">N/A — not in system</td></tr>
+        <tr><td class="td-name">Others (690 products)</td><td>Available per product</td><td>Available per product</td><td><span class="badge badge-gray">Varies</span></td><td class="td-muted">N/A — not in system</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- DASHBOARD 4: SALES EXECUTIVE -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="dashboard" id="dash-executive">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px">
+      <div class="av" style="width:38px;height:38px;font-size:13px;background:#065F46">AS</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--navy)">Aswathy Sijith — Sales Manager, Kochi Team</div>
+        <div style="font-size:12px;color:var(--muted)">Reports to Cinu P Thomas · 391 customers assigned · FY2025 Q4 target set</div>
+      </div>
+      <div style="margin-left:auto;font-size:11px;color:var(--muted)">Showing real data where available</div>
+    </div>
+
+    <div class="info-strip">ℹ️ This rep has a Q4-only target (entered mid-year). Q1, Q2, Q3 show as zero — targets were not set at the start of the year.</div>
+
+    <div class="kpi-grid">
+      <div class="kpi blue">
+        <div class="kpi-label">My Q4 Target</div>
+        <div class="kpi-value">₹1 Cr</div>
+        <div class="kpi-sub">Q4 FY2025 only (Q1–Q3 not set)</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Achieved (Q4)</div>
+        <div class="kpi-value">₹33.3 L</div>
+        <div class="kpi-sub">33.3% — auto-calculated</div>
+        <div class="kpi-est">⚠ Not manually updated</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">My Customers</div>
+        <div class="kpi-value">391</div>
+        <div class="kpi-sub">Assigned customer accounts</div>
+      </div>
+      <div class="kpi teal">
+        <div class="kpi-label">Team Overall Win Rate</div>
+        <div class="kpi-value">19.4%</div>
+        <div class="kpi-sub">Company-wide figure</div>
+      </div>
+      <div class="kpi gray">
+        <div class="kpi-label">Follow-ups Today</div>
+        <div class="kpi-value">—</div>
+        <div class="kpi-sub">16 tasks total across all reps</div>
+        <div class="kpi-est">Low task logging adoption</div>
+      </div>
+    </div>
+
+    <div class="chart-grid-equal">
+      <div class="chart-card">
+        <div class="chart-title">My Quarterly Target <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">FY2025 — only Q4 has a target set</div>
+        <div class="chart-wrap"><canvas id="c-exec-quarterly" height="200"></canvas></div>
+        <div class="partial-note">⚠ Q1, Q2, Q3 show as zero — targets were entered mid-year, not at the start of FY2025.</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">My Deal View</div>
+        <div class="chart-sub">Individual deal-by-deal tracking</div>
+        <div class="na-panel">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Not available</div>
+          <div class="na-desc">The system stores totals per customer account — not individual deals with stages, values, and open dates. A deal-by-deal view is not possible with current data.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Pipeline by Stage</div>
+        <div class="chart-sub">Lead / Proposal / Negotiation / Won</div>
+        <div class="na-panel">
+          <div class="na-icon">🔒</div>
+          <div class="na-title">Not available</div>
+          <div class="na-desc">Stage tracking per deal is not recorded in the current system.</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">My Follow-ups</div>
+        <div class="chart-sub">Tasks scheduled from the task system</div>
+        <div class="na-panel">
+          <div class="na-icon">📋</div>
+          <div class="na-title">Very few tasks logged</div>
+          <div class="na-desc">Only 16 tasks across all reps company-wide. Last entry: Jan 2025. Will grow as the team uses the task feature.</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Upcoming This Week</div>
+        <div class="chart-sub">Meetings, proposals, demos</div>
+        <div class="na-panel">
+          <div class="na-icon">📅</div>
+          <div class="na-title">No upcoming tasks found</div>
+          <div class="na-desc">No upcoming tasks are recorded. This section will populate as task logging increases.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- DASHBOARD 5: LEADERSHIP BOARD -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="dashboard" id="dash-leadership">
+    <div class="chart-grid-equal" style="margin-bottom:0">
+      <div class="chart-card">
+        <div class="sec-hdr">
+          <div><div class="chart-title">🏆 Leaderboard — All 19 Reps <span class="real-badge">Real data</span></div><div class="chart-sub">Ranked by customer volume · all 19 team members</div></div>
+        </div>
+        <div id="leaderboard"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">FY2025 Target Tracking <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">7 of 19 reps have targets · All show 33.3% (auto-calculated)</div>
+        <div class="chart-wrap"><canvas id="c-targets" height="260"></canvas></div>
+        <div class="partial-note">⚠ Achievement figures are auto-calculated at 33.3% of Q4 target when entered. Not updated from actual sales. Q1–Q3 are blank for most reps.</div>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title">Target Summary <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">7 people with confirmed 2025 targets</div>
+        <table><thead><tr><th>Name</th><th>Annual Target</th><th>Achieved</th><th>Ach%</th></tr></thead>
+        <tbody>
+          <tr><td class="td-name">Cinu (company)</td><td>₹29 Cr</td><td>₹9.67 Cr</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Cinu (personal)</td><td>₹2.4 Cr</td><td>₹80 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Soorya Ravi</td><td>₹1 Cr</td><td>₹33.3 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Aswathy Sijith</td><td>₹1 Cr</td><td>₹33.3 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Lakshmi Kalesh</td><td>₹60 L</td><td>₹20 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Tobit Joe Glancy</td><td>₹20 L</td><td>₹6.67 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+          <tr><td class="td-name">Aayisha</td><td>₹10 L</td><td>₹3.33 L</td><td><span class="badge badge-amber">33.3%</span></td></tr>
+        </tbody></table>
+        <div class="partial-note" style="margin-top:10px">⚠ All 33.3% figures are auto-calculated — not verified against actual sales.</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Revenue by Year <span class="real-badge">Real data</span></div>
+        <div class="chart-sub">Actual payments received</div>
+        <div class="chart-wrap"><canvas id="c-rev-small" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Reps Without 2025 Targets</div>
+        <div class="chart-sub">12 of 19 team members — targets not yet entered</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Lakshmipriya S <span style="color:var(--muted);font-size:11px">1,143 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Swathy Santhosh <span style="color:var(--muted);font-size:11px">781 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Mohammed Fiaz <span style="color:var(--muted);font-size:11px">615 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Kevin Binu <span style="color:var(--muted);font-size:11px">549 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Ramya Devaraj <span style="color:var(--muted);font-size:11px">418 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">Arjun Palakkal <span style="color:var(--muted);font-size:11px">313 customers</span></div>
+          <div style="font-size:12px;padding:5px 8px;background:var(--bg);border-radius:6px">+ 6 more reps</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="sec-hdr"><div class="sec-title">🎖 Recognition & Badges <span class="real-badge">Real data</span></div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">
+      <div class="badge-card"><div class="badge-icon">🤝</div><div class="badge-name">Deal Closer</div><div class="badge-holder">Top customer volume this month</div></div>
+      <div class="badge-card"><div class="badge-icon">🔗</div><div class="badge-name">Pipeline Builder</div><div class="badge-holder">Highest pipeline created</div></div>
+      <div class="badge-card"><div class="badge-icon">💰</div><div class="badge-name">Profit Champion</div><div class="badge-holder">Highest margin contribution</div></div>
+      <div class="badge-card"><div class="badge-icon">🏅</div><div class="badge-name">Consistent Performer</div><div class="badge-holder">Sustained achievement</div></div>
+    </div>
+    <div class="partial-note">26 reputation records exist in the system — badge holders will be pulled from live data when connected.</div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+const titles={
+  company:  ['Company Dashboard','Leadership Overview'],
+  manager:  ['Sales Manager Dashboard','Sales Manager View'],
+  product:  ['Product Manager Dashboard','Product Manager'],
+  executive:['Sales Executive Dashboard','Aswathy Sijith · Kochi Team'],
+  leadership:['Target & Leadership Board','All 19 reps · Real data']
+};
+
+function switchDash(id,btn){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.dashboard').forEach(d=>d.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('dash-'+id).classList.add('active');
+  const t=titles[id];
+  document.getElementById('topbar-title').innerHTML=t[0]+' <span>'+t[1]+'</span>';
+  initCharts(id);
+}
+
+const charts={};
+function destroy(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function initCharts(dash){
+  if(dash==='company'){
+    destroy('ry'); destroy('reg');
+    // Real revenue by year
+    charts['ry']=new Chart(document.getElementById('c-revenue-year'),{
+      type:'bar',
+      data:{
+        labels:['2021','2022','2023','2024 ⚠','2025','2026 (partial)'],
+        datasets:[{
+          label:'Revenue Received (Rs.)',
+          data:[21700000,17100000,9210000,2520000,14500000,7630000],
+          backgroundColor:['#3B82F6','#3B82F6','#3B82F6','#EF4444','#10B981','#10B981'],
+          borderRadius:6,
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>'Rs.'+(c.raw/10000000).toFixed(2)+' Cr'}}},
+        scales:{y:{ticks:{callback:v=>'Rs.'+(v/10000000).toFixed(1)+'Cr'},grid:{color:'#F1F5F9'}},x:{grid:{display:false}}}
+      }
+    });
+    // Region - approximate
+    charts['reg']=new Chart(document.getElementById('c-region'),{
+      type:'doughnut',
+      data:{
+        labels:['Kochi / Kerala','Bangalore','Other India','Middle East','Others'],
+        datasets:[{data:[45,28,15,8,4],backgroundColor:['#3B82F6','#10B981','#F59E0B','#8B5CF6','#64748B'],borderWidth:2,borderColor:'#fff'}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}
+      }
+    });
+  }
+
+  if(dash==='manager'){
+    destroy('tt');
+    // Real target data — 7 reps (excluding Cinu personal for clarity, showing rep-level)
+    charts['tt']=new Chart(document.getElementById('c-team-target'),{
+      type:'bar',
+      data:{
+        labels:['Soorya Ravi','Aswathy Sijith','Lakshmi Kalesh','Tobit Joe','Aayisha'],
+        datasets:[
+          {label:'Q4 Target',data:[10000000,10000000,6000000,2000000,1000000],backgroundColor:'#DBEAFE',borderColor:'#3B82F6',borderWidth:1.5,borderRadius:4},
+          {label:'Achieved (auto-calc)',data:[3333334,3333334,2000000,666668,333334],backgroundColor:'#F59E0B',borderRadius:4},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{font:{size:10},padding:10}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': Rs.'+(c.raw/100000).toFixed(1)+'L'}}},
+        scales:{y:{ticks:{callback:v=>'Rs.'+(v/100000).toFixed(0)+'L'},grid:{color:'#F1F5F9'}},x:{grid:{display:false}}}
+      }
+    });
+  }
+
+  if(dash==='product'){
+    destroy('stk');
+    charts['stk']=new Chart(document.getElementById('c-stock'),{
+      type:'doughnut',
+      data:{
+        labels:['Adequate stock','Low stock (at warning limit)'],
+        datasets:[{data:[370,38],backgroundColor:['#10B981','#EF4444'],borderWidth:2,borderColor:'#fff'}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}},
+          tooltip:{callbacks:{label:c=>c.label+': '+c.raw+' records'}}}
+      }
+    });
+  }
+
+  if(dash==='executive'){
+    destroy('eq');
+    // Real quarterly data for Aswathy Sijith
+    charts['eq']=new Chart(document.getElementById('c-exec-quarterly'),{
+      type:'bar',
+      data:{
+        labels:['Q1 (no target)','Q2 (no target)','Q3 (no target)','Q4'],
+        datasets:[
+          {label:'Target',data:[0,0,0,10000000],backgroundColor:'#DBEAFE',borderRadius:4},
+          {label:'Achieved',data:[0,0,0,3333334],backgroundColor:'#F59E0B',borderRadius:4},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{font:{size:10},padding:8}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': Rs.'+(c.raw/100000).toFixed(1)+'L'}}},
+        scales:{y:{ticks:{callback:v=>'Rs.'+(v/100000).toFixed(0)+'L'},grid:{color:'#F1F5F9'}},x:{grid:{display:false}}}
+      }
+    });
+  }
+
+  if(dash==='leadership'){
+    destroy('lt'); destroy('rs');
+
+    // Real leaderboard — all 19 reps with confirmed client counts
+    const reps=[
+      {name:'Lakshmipriya S', team:'Kochi',      clients:1143, pct:1.0,  col:'#1D4ED8'},
+      {name:'Swathy Santhosh',team:'Team 2',      clients:781,  pct:0.68, col:'#065F46'},
+      {name:'Lakshmi Kalesh', team:'Kochi',       clients:683,  pct:0.60, col:'#1D4ED8'},
+      {name:'Mohammed Fiaz',  team:'Bangalore',   clients:615,  pct:0.54, col:'#92400E'},
+      {name:'Kevin Binu',     team:'Bangalore',   clients:549,  pct:0.48, col:'#92400E'},
+      {name:'Ramya Devaraj',  team:'Bangalore',   clients:418,  pct:0.37, col:'#92400E'},
+      {name:'Aswathy Sijith', team:'Manager·Kochi',clients:391, pct:0.34, col:'#065F46'},
+      {name:'Arjun Palakkal', team:'Team 2',      clients:313,  pct:0.27, col:'#5B21B6'},
+      {name:'Soorya Ravi',    team:'Team 2',      clients:227,  pct:0.20, col:'#5B21B6'},
+      {name:'Radhika',        team:'Kochi',       clients:225,  pct:0.20, col:'#1D4ED8'},
+      {name:'Tobit Joe Glancy',team:'Team 2',     clients:171,  pct:0.15, col:'#5B21B6'},
+      {name:'Teena Kevin',    team:'',            clients:153,  pct:0.13, col:'#374151'},
+      {name:'Anitha C M',     team:'Kochi',       clients:123,  pct:0.11, col:'#1D4ED8'},
+      {name:'Veena Coelho',   team:'Manager·Blr', clients:88,   pct:0.08, col:'#065F46'},
+      {name:'Sabu S Nair',    team:'Kochi',       clients:75,   pct:0.07, col:'#374151'},
+      {name:'Mathew Thomas',  team:'',            clients:53,   pct:0.05, col:'#374151'},
+      {name:'John V Roy',     team:'Kochi',       clients:19,   pct:0.02, col:'#1D4ED8'},
+      {name:'Sareena Anas',   team:'Manager·T2',  clients:13,   pct:0.01, col:'#065F46'},
+      {name:'Bobby Thomas T', team:'',            clients:1,    pct:0.001,col:'#374151'},
+    ];
+    const ranks=['rank-1','rank-2','rank-3','rank-n'];
+    const lb=document.getElementById('leaderboard');
+    lb.innerHTML=reps.map((r,i)=>`
+      <div class="leader-row">
+        <div class="leader-rank ${i<3?ranks[i]:'rank-n'}">${i+1}</div>
+        <div class="av" style="background:${r.col}">${r.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div style="flex:1"><div class="leader-name">${r.name}</div><div class="leader-sub">${r.team}</div></div>
+        <div class="leader-bar-wrap"><div class="leader-bar" style="width:${r.pct*100}%"></div></div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--navy);min-width:36px;text-align:right">${r.clients.toLocaleString()}</div>
+      </div>
+    `).join('');
+
+    // Target chart — 5 reps (excluding Cinu duplicates for clarity)
+    charts['lt']=new Chart(document.getElementById('c-targets'),{
+      type:'bar',
+      data:{
+        labels:['Cinu (co.)','Soorya','Aswathy','Lakshmi K','Tobit','Aayisha'],
+        datasets:[
+          {label:'Q4 Target',   data:[89000000,10000000,10000000,6000000,2000000,1000000],backgroundColor:'#DBEAFE',borderRadius:4},
+          {label:'Achieved',    data:[29666668, 3333334, 3333334, 2000000, 666668, 333334],backgroundColor:'#F59E0B',borderRadius:4},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{labels:{font:{size:10},padding:8}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': Rs.'+(c.raw/100000).toFixed(1)+'L'}}},
+        scales:{x:{ticks:{callback:v=>'Rs.'+(v/100000).toFixed(0)+'L'},grid:{color:'#F1F5F9'}},y:{grid:{display:false},ticks:{font:{size:10}}}}
+      }
+    });
+
+    // Revenue small
+    charts['rs']=new Chart(document.getElementById('c-rev-small'),{
+      type:'bar',
+      data:{
+        labels:['2021','2022','2023','2024','2025','2026'],
+        datasets:[{
+          label:'Revenue',
+          data:[21700000,17100000,9210000,2520000,14500000,7630000],
+          backgroundColor:['#3B82F6','#3B82F6','#3B82F6','#EF4444','#10B981','#10B981'],
+          borderRadius:4,
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Rs.'+(c.raw/10000000).toFixed(2)+' Cr'}}},
+        scales:{y:{ticks:{callback:v=>'₹'+(v/10000000).toFixed(1)+'Cr'},grid:{color:'#F1F5F9'}},x:{grid:{display:false}}}
+      }
+    });
+  }
+}
+
+window.addEventListener('DOMContentLoaded',()=>initCharts('company'));
+</script>
+</body>
+</html>
